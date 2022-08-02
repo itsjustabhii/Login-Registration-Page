@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const connectDB = async (DATABASE_URL) =>{
     try {
-        const DB_OPTIONS = {
+        const DB_OPTIONS = {    //DB configurations
             dbName:"login"
         }
         await mongoose.connect(DATABASE_URL, DB_OPTIONS)

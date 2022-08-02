@@ -1,4 +1,4 @@
-import UserModel from '../models/User.js'
+import UserModel from '../models/User.js'   //importing user model
 import bcrypt from 'bcrypt'     //Used for password hasing
 import jwt from 'jsonwebtoken'  //to generate a token
 import  transporter  from '../config/emailConfig.js'
@@ -12,22 +12,22 @@ class UserController {
             res.send({"Status":"Failed", "Message":"Email already exists"})
         } else {
             if(name && email && password && password_confirmation && tc) {  //Check if user has provided all fields of data
-                if(password === password_confirmation) {
+                if(password === password_confirmation) {    //checks if password and password_confirmation are matching
                     try{
                         const salt = await bcrypt.genSalt(10)   //Generating a salt for password hashing
                         const hashPassword = await bcrypt.hash(password, salt)  //Hashing password using salt
-                        const doc = new UserModel({ //Saving the user details
+                        const doc = new UserModel({ //Saving the user details which are entered
                         name: name,
                         email:email,
-                        password: hashPassword,
+                        password: hashPassword, //hashed password is stored in the DB
                         tc: tc
                     })
-                    await doc.save()
+                    await doc.save()    //to save the doc
                     const saved_user = await UserModel.findOne({email:email})    //Obtained user that is been saved
                     
                     //---------Generate JWT Token-----------------
-                    const token = jwt.sign({userID:saved_user._id}, process.env.JWT_SECRET_KEY, {expiresIn: '5d'})  //Expiry tells in how many days the password expires.
-                    res.status(201).send({"Status":"Success", "Message":"Registration Success!", "token":token})
+                    const token = jwt.sign({userID:saved_user._id}, process.env.JWT_SECRET_KEY, {expiresIn: '5d'})  //Expiry tells in how many days the password expires.   JWT_secret_key is created by us
+                    res.status(201).send({"Status":"Success", "Message":"Registration Success!", "token":token})    //Sending JWT token to the user
 
                     res.status(201).send({"Status":"Success", "Message":"Registration Success!"})
                     }catch(error) {
@@ -44,18 +44,19 @@ class UserController {
         }
     }   //userRegistration block ends here
 
+
     //User Login
     static userLogin = async(req, res) => {
         try{
             const {email, password} = req.body
-            if(email && password) {
+            if(email && password) {     //findOne() - finds one document according to the condition
                 const user = await UserModel.findOne({email:email}) //Checks the email given by user is already in the DB. Allows only those emails which are present in DB
                 if(user != null){   //if user is registered in DB
                     const isMatch = await bcrypt.compare(password, user.password)   //Compares if passsword given by user is equal to password stored in DB
                     if((user.email === email) && isMatch) {  //Checking if both email and password is stored in DB and true
                         //----------GENERATE JWT TOKEN for Successful Login
                         const token = jwt.sign({userID:user._id}, process.env.JWT_SECRET_KEY, {expiresIn: '5d'})
-                        res.send({"Status":"Success", "Message":"Login Successful!", "token":token})
+                        res.send({"Status":"Success", "Message":"Login Successful!", "token":token})    //Sending JWT token to the user
                     }else {
                         res.send({"Status":"Failed", "Message":"Email or Password is invalid!"})
                     }
@@ -71,7 +72,7 @@ class UserController {
         }
     }
 
-    //Change Password
+    //Change Password   - Only for logged in Users
     static changeUserPassword = async(req, res) => {
         const {password, password_confirmation} = req.body
         if(password && password_confirmation){  //checking if both password fields are filled by the user
@@ -101,7 +102,7 @@ class UserController {
             if(user){
                 const secret = user._id + process.env.JWT_SECRET_KEY    //Generating another secret key
                 const token = jwt.sign({userID:user._id}, secret, {expiresIn: '15m'})   //Geneating a JWT Token
-                const link =`http://127.0.0.1:3000/api/user/reset/${user._id}/${token}`    //Front end link
+                const link =`http://127.0.0.1:3000/api/user/reset/${user._id}/${token}`    //Back end link
                 // console.log(link)
             //    Link type for frontend -   /api/user/reset:id/token
             //Send RESET Password Email
@@ -120,7 +121,7 @@ class UserController {
         }
     }
 
-    static userPasswordReset = async(req, res) => {        //Works when we click on Rest submit button
+    static userPasswordReset = async(req, res) => {        //Works when we click on Reset submit button
         const {password, password_confirmation} = req.body  //req.body - gets data from body form
         const {id, token} = req.params      //params - gets id from url
         const user = await UserModel.findById(id)

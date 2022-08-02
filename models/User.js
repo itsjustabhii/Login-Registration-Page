@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 //Defining Schema(Creating a table)
 const userSchema = new mongoose.Schema({
-    name:{type:String, required:true, trim:true},
+    name:{type:String, required:true, trim:true},   //trim - to remove spaces
     email:{type:String, required:true, trim:true},
     password:{type:String, required:true, trim:true},
     tc:{type:Boolean, required:true}    //term condition
